@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,7 +11,36 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const welcomeMessage: Message = {
+      role: "assistant",
+      text: "Bienvenue ! Première Consulting est un cabinet de conseil et consulting en Tunisie qui opère sur plusieurs domaines et compte essentiellement sur la compétence éprouvée de ses collaborateurs et de ses consultants. Comment puis-je vous aider aujourd'hui ?",
+      sources: ["https://premiere-consulting.tn"]
+    };
+    setMessages([welcomeMessage]);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStep(0);
+      return;
+    }
+
+    const loadingSteps = ["scraping...", "thinking...", "generating..."];
+    const interval = setInterval(() => {
+      setLoadingStep(prev => {
+        if (prev < loadingSteps.length - 1) {
+          return prev + 1;
+        }
+        return prev; // Stay at the last step
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -62,7 +91,7 @@ const sendMessage = async () => {
   }, 100);
 
   try {
-    const url = "http://localhost:5678/webhook-test/chat";
+    const url = "https://ahmed-brahim.app.n8n.cloud/webhook/chat";
     const payload = {
       body: {
         question: currentQuestion,
@@ -171,7 +200,9 @@ const sendMessage = async () => {
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
               </div>
-              <span className="ml-2 text-gray-400 text-sm">Thinking...</span>
+              <span className="ml-2 text-gray-400 text-sm capitalize">
+                {["scraping...", "thinking...", "generating..."][loadingStep]}
+              </span>
             </div>
           </div>
         )}
